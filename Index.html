@@ -1,0 +1,309 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Parcial Programación UGB</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family: Arial, sans-serif;
+}
+
+body{
+    background:#e9e9e9;
+}
+
+
+header{
+    background-color:#2c2ccf;
+    height:95px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 60px;
+    position:relative;
+    color:white;
+}
+
+header img{
+    width:85px;
+    filter:brightness(0) invert(1);
+}
+
+.lema-header{
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    font-weight:600;
+    font-size:18px;
+}
+
+.header-text{
+    text-align:right;
+    font-size:14px;
+    line-height:1.4;
+}
+
+.contenido{
+    min-height:calc(100vh - 190px);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.card{
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.2);
+    width:500px;
+}
+
+.card h2{
+    text-align:center;
+    margin-bottom:20px;
+}
+
+input, select, button{
+    width:100%;
+    padding:8px;
+    margin-bottom:15px;
+}
+
+button{
+    background:#2c2ccf;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#1a1a9f;
+}
+
+.error{
+    color:red;
+    font-size:13px;
+    text-align:center;
+}
+
+table{
+    margin-top:15px;
+    font-size:13px;
+}
+
+th{
+    background:#2c2ccf;
+    color:white;
+}
+
+.resultado{
+    margin-top:15px;
+    font-weight:bold;
+    text-align:center;
+}
+
+footer{
+    background-color:#2c2ccf;
+    color:white;
+    text-align:center;
+    padding:25px 10px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <img src="logo.png" alt="UGB Logo">
+    <div class="lema-header">La Universidad De TuVida</div>
+    <div class="header-text">
+        Parcial Primer Cómputo<br>
+        Ingeniería en Sistemas y Redes Informáticas
+    </div>
+</header>
+
+<div class="contenido">
+
+<div class="card">
+    <h2>Sistema de Control de Estudiantes</h2>
+
+    <form id="formEstudiante">
+        <input type="text" id="nombre" placeholder="Nombre del estudiante">
+
+        <input type="number" id="nota1" placeholder="Nota 1 (0-10)">
+
+        <input type="number" id="nota2" placeholder="Nota 2 (0-10)">
+
+        <input type="number" id="nota3" placeholder="Nota 3 (0-10)">
+
+        <select id="carrera">
+            <option value="">Seleccione carrera</option>
+            <option value="Sistemas">Ingeniería en Sistemas</option>
+            <option value="Redes">Ingeniería en Redes</option>
+        </select>
+
+        <button type="submit">Registrar Estudiante</button>
+    </form>
+
+    <div class="error" id="error"></div>
+
+    <hr>
+
+    <table border="1" width="100%" id="tabla">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Carrera</th>
+                <th>Promedio</th>
+                <th>Estado</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <resumen-general></resumen-general>
+</div>
+
+</div>
+
+<footer>
+    <h3>Integrantes del Equipo</h3>
+    <p>Marielena Velasquez Escobar - SMSS018024 &nbsp;&nbsp;&nbsp; Ariel Esau Yanes Quintanilla - SMSS008924</p>
+</footer>
+
+<script>
+
+
+
+class ResumenGeneral extends HTMLElement{
+    constructor(){
+        super();
+        this.innerHTML = `<div class="resultado"></div>`;
+    }
+
+    mostrar(totalAprobados,totalReprobados){
+        this.querySelector(".resultado").innerText =
+        "Aprobados: " + totalAprobados + 
+        " | Reprobados: " + totalReprobados;
+    }
+}
+
+customElements.define("resumen-general", ResumenGeneral);
+
+
+
+class SistemaAcademico{
+
+    constructor(){
+        this.estudiantes = JSON.parse(localStorage.getItem("estudiantes")) || [];
+    }
+
+    calcularPromedio(n1,n2,n3){
+        return (n1+n2+n3)/3;
+    }
+
+    estado(promedio){
+        return promedio >= 6 ? "Aprobado" : "Reprobado";
+    }
+
+    agregar(est){
+        this.estudiantes.push(est);
+        this.guardar();
+    }
+
+    eliminar(index){
+        this.estudiantes.splice(index,1);
+        this.guardar();
+    }
+
+    guardar(){
+        localStorage.setItem("estudiantes",JSON.stringify(this.estudiantes));
+    }
+
+    resumen(){
+        let aprobados = this.estudiantes.filter(e=>e.estado==="Aprobado").length;
+        let reprobados = this.estudiantes.filter(e=>e.estado==="Reprobado").length;
+        return {aprobados,reprobados};
+    }
+}
+
+
+const sistema = new SistemaAcademico();
+const form = document.getElementById("formEstudiante");
+const tabla = document.querySelector("#tabla tbody");
+const error = document.getElementById("error");
+const resumenComp = document.querySelector("resumen-general");
+
+form.addEventListener("submit", function(e){
+
+    e.preventDefault();
+
+    let nombre = document.getElementById("nombre").value.trim();
+    let n1 = parseFloat(document.getElementById("nota1").value);
+    let n2 = parseFloat(document.getElementById("nota2").value);
+    let n3 = parseFloat(document.getElementById("nota3").value);
+    let carrera = document.getElementById("carrera").value;
+
+    if(nombre==="" || isNaN(n1) || isNaN(n2) || isNaN(n3) || carrera===""){
+        error.innerText="Todos los campos son obligatorios.";
+        return;
+    }
+
+    if(n1<0||n1>10||n2<0||n2>10||n3<0||n3>10){
+        error.innerText="Las notas deben estar entre 0 y 10.";
+        return;
+    }
+
+    error.innerText="";
+
+    let promedio = sistema.calcularPromedio(n1,n2,n3);
+    let estado = sistema.estado(promedio);
+
+    sistema.agregar({nombre,carrera,promedio,estado});
+
+    renderTabla();
+    form.reset();
+});
+
+
+function renderTabla(){
+
+    tabla.innerHTML="";
+
+    sistema.estudiantes.forEach((est,index)=>{
+
+        let fila=`
+        <tr>
+            <td>${est.nombre}</td>
+            <td>${est.carrera}</td>
+            <td>${est.promedio.toFixed(2)}</td>
+            <td>${est.estado}</td>
+            <td><button onclick="eliminar(${index})">Eliminar</button></td>
+        </tr>
+        `;
+
+        tabla.innerHTML+=fila;
+    });
+
+    let r=sistema.resumen();
+    resumenComp.mostrar(r.aprobados,r.reprobados);
+}
+
+
+function eliminar(index){
+    sistema.eliminar(index);
+    renderTabla();
+}
+
+renderTabla();
+
+</script>
+
+</body>
+</html>
